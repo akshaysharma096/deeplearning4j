@@ -269,8 +269,7 @@ public class LayerNormalization extends FeedForwardLayer {
             return this;
         }
 
-        Override
-
+        @Override
         public LayerNormalization build() {
             return new LayerNormalization(this);
         }
