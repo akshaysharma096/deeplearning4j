@@ -24,9 +24,8 @@ import java.util.Map;
 
 /**
  * Created by akshaysharma on 26/06/18.
- *
  * @author akshaysharma096
- *         Batch normalization configuration
+ * Layer normalization configuration
  */
 
 public class LayerNormalization extends FeedForwardLayer {
