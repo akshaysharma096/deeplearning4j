@@ -14,6 +14,7 @@
 #include <helpers/helper_hash.h>
 #include <array/ShapeList.h>
 #include <array/ResultSet.h>
+#include <dll.h>
 //#include <ops/declarable/declarable_ops.h>
 
 #include <chrono>
@@ -45,7 +46,7 @@ namespace nd4j {
          *
          */
         template <typename T>
-        class DeclarableOp {
+        class ND4J_EXPORT DeclarableOp {
         protected:
             OpDescriptor *_descriptor;
 
@@ -85,7 +86,7 @@ namespace nd4j {
             /**
             *   This method pre-allocates NDArrays for Op output, in case they are not available at op execution time
             */
-            bool prepareOutputs(Context<T>& block);
+            int prepareOutputs(Context<T>& block);
 
             //std::vector<int>* calculateOutputShape(std::vector<int>* inputShape, nd4j::graph::Block<T>& block);
         public:

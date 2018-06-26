@@ -822,8 +822,7 @@ public abstract class BaseDataBuffer implements DataBuffer {
 
     @Override
     public void assign(Number value) {
-        for (int i = 0; i < length(); i++)
-            assign(value, i);
+        assign(value, 0);
     }
 
 
@@ -1112,14 +1111,14 @@ public abstract class BaseDataBuffer implements DataBuffer {
         if (globalType == Type.INT || type == Type.INT) {
             int anElement = element.intValue();
             put(i, anElement);
+        } else if (globalType == Type.LONG || type == Type.LONG) {
+            long anElement = element.longValue();
+            put(i, anElement);
         } else if (globalType == Type.FLOAT || globalType == Type.HALF) {
             float anElement = element.floatValue();
             put(i, anElement);
         } else if (globalType == Type.DOUBLE) {
             double anElement = element.doubleValue();
-            put(i, anElement);
-        } else if (globalType == Type.LONG) {
-            long anElement = element.longValue();
             put(i, anElement);
         }
     }
@@ -1411,7 +1410,7 @@ public abstract class BaseDataBuffer implements DataBuffer {
                 else if (DataTypeUtil.getDtypeFromContext() == Type.HALF && currentType != Type.INT)
                     elementSize = 2;
 
-                if (currentType != DataTypeUtil.getDtypeFromContext() && currentType != Type.HALF && currentType != Type.INT
+                if (currentType != DataTypeUtil.getDtypeFromContext() && currentType != Type.HALF && (currentType != Type.INT && currentType != Type.LONG)
                         && !(DataTypeUtil.getDtypeFromContext() == Type.DOUBLE)) {
                     log.warn("Loading a data stream with opType different from what is set globally. Expect precision loss");
                     if (DataTypeUtil.getDtypeFromContext() == Type.INT)
@@ -1462,11 +1461,11 @@ public abstract class BaseDataBuffer implements DataBuffer {
     protected void readContent(DataInputStream s, Type currentType, Type globalType) {
         try {
             if (currentType == Type.DOUBLE) {
-                for (int i = 0; i < length(); i++) {
+                for (long i = 0; i < length(); i++) {
                     putByGlobalType(i, s.readDouble(), globalType);
                 }
             } else if (currentType == Type.FLOAT) {
-                for (int i = 0; i < length(); i++) {
+                for (long i = 0; i < length(); i++) {
                     putByGlobalType(i, s.readFloat(), globalType);
                 }
             } else if (currentType == Type.COMPRESSED) {
@@ -1475,24 +1474,24 @@ public abstract class BaseDataBuffer implements DataBuffer {
                 long originalLength = s.readLong();
                 long numberOfElements = s.readLong();
 
-                // special case here. We should collect bytes, wrap them into pointer, and then decompress
-                byte[] temp = new byte[(int) compressedLength];
-                for (int i = 0; i < compressedLength; i++) {
-                    temp[i] = s.readByte();
-                }
-                pointer = new BytePointer(temp);
+                pointer = new BytePointer(compressedLength);
                 type = Type.COMPRESSED;
+                val tp = (BytePointer) pointer;
+
+                for (long i = 0; i < compressedLength; i++) {
+                    tp.put(i, s.readByte());
+                }
 
             } else if (currentType == Type.HALF) {
-                for (int i = 0; i < length(); i++) {
+                for (long i = 0; i < length(); i++) {
                     putByGlobalType(i, toFloat(s.readShort()), globalType);
                 }
             } else if (currentType == Type.LONG) {
-                for (int i = 0; i < length(); i++) {
+                for (long i = 0; i < length(); i++) {
                     putByGlobalType(i, s.readLong(), globalType);
                 }
             } else {
-                for (int i = 0; i < length(); i++) {
+                for (long i = 0; i < length(); i++) {
                     putByGlobalType(i, s.readInt(), globalType);
                 }
             }
@@ -1503,27 +1502,27 @@ public abstract class BaseDataBuffer implements DataBuffer {
 
     @Override
     public void write(DataOutputStream out) throws IOException {
-        if (length() >= Integer.MAX_VALUE)
-            throw new IllegalArgumentException("Length of data buffer can not be >= Integer.MAX_VALUE on output");
+        //if (length() >= Integer.MAX_VALUE)
+         //   throw new IllegalArgumentException("Length of data buffer can not be >= Integer.MAX_VALUE on output");
         //        log.info("Saving dType: {}", dataType().name());
         out.writeUTF(allocationMode.name());
         out.writeLong(length());
         out.writeUTF(dataType().name());
         if (dataType() == Type.DOUBLE) {
-            for (int i = 0; i < length(); i++)
+            for (long i = 0; i < length(); i++)
                 out.writeDouble(getDouble(i));
         } else if (dataType() == Type.LONG) {
-            for (int i = 0; i < length(); i++)
+            for (long i = 0; i < length(); i++)
                 out.writeLong(getLong(i));
         } else if (dataType() == Type.INT) {
-            for (int i = 0; i < length(); i++)
+            for (long i = 0; i < length(); i++)
                 out.writeInt(getInt(i));
         } else if (dataType() == Type.HALF) {
-            for (int i = 0; i < length(); i++) {
+            for (long i = 0; i < length(); i++) {
                 out.writeShort(getShort(i));
             }
         } else {
-            for (int i = 0; i < length(); i++) {
+            for (long i = 0; i < length(); i++) {
                 out.writeFloat(getFloat(i));
             }
         }

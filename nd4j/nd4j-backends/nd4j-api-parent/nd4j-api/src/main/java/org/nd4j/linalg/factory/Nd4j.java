@@ -60,6 +60,7 @@ import org.nd4j.linalg.api.ops.factory.DefaultOpFactory;
 import org.nd4j.linalg.api.ops.factory.OpFactory;
 import org.nd4j.linalg.api.ops.impl.controlflow.Select;
 import org.nd4j.linalg.api.ops.impl.indexaccum.IMax;
+import org.nd4j.linalg.api.ops.impl.indexaccum.IMin;
 import org.nd4j.linalg.api.ops.impl.shape.Diag;
 import org.nd4j.linalg.api.ops.impl.transforms.OldReverse;
 import org.nd4j.linalg.api.ops.impl.transforms.ReplaceNans;
@@ -694,6 +695,21 @@ public class Nd4j {
             return Nd4j.getExecutioner().exec(imax, Integer.MAX_VALUE);
         } else {
             return Nd4j.getExecutioner().exec(imax, dimension);
+        }
+    }
+
+    /**
+     *
+     * @param arr
+     * @param dimension
+     * @return
+     */
+    public static INDArray argMin(INDArray arr, int... dimension) {
+        IMin imin = new IMin(arr);
+        if(dimension == null || dimension.length == 0){
+            return Nd4j.getExecutioner().exec(imin, Integer.MAX_VALUE);
+        } else {
+            return Nd4j.getExecutioner().exec(imin, dimension);
         }
     }
 
@@ -2654,7 +2670,7 @@ public class Nd4j {
      */
     public static INDArray createArrayFromShapeBuffer(DataBuffer data, DataBuffer shapeInfo) {
         int rank = Shape.rank(shapeInfo);
-        long offset = Shape.offset(shapeInfo);
+        long offset = 0;
         INDArray result = Nd4j.create(data, toIntArray(rank, Shape.shapeOf(shapeInfo)),
                 toIntArray(rank, Shape.stride(shapeInfo)), offset, Shape.order(shapeInfo));
         if (data instanceof CompressedDataBuffer)
@@ -2692,7 +2708,7 @@ public class Nd4j {
     public static INDArray read(DataInputStream dis) throws IOException {
         DataBuffer shapeInformation = Nd4j.createBufferDetached(new long[1], DataBuffer.Type.LONG);
         shapeInformation.read(dis);
-        int length = Shape.length(shapeInformation);
+        val length = Shape.length(shapeInformation);
         DataBuffer data = CompressedDataBuffer.readUnknown(dis, length);
         return createArrayFromShapeBuffer(data, shapeInformation);
     }
@@ -3864,6 +3880,18 @@ public class Nd4j {
     }
 
     /**
+     * This method creates "empty" INDArray
+     *
+     * PLEASE NOTE: this feature isn't production ready yet
+     * @return
+     */
+    public static INDArray empty() {
+        val ret = INSTANCE.empty();
+        logCreationIfNecessary(ret);
+        return ret;
+    }
+
+    /**
      * Create an ndrray with the specified shape
      *
      * @param data  the data to use with tne ndarray
@@ -4081,14 +4109,6 @@ public class Nd4j {
 
     public static INDArray create(double[] data, long[] shape, long[] stride, long offset, char order) {
         shape = getEnsuredShape(shape);
-
-        if (shape.length == 1) {
-            if (shape[0] == data.length) {
-                shape = new long[] {1, data.length};
-            } else
-                throw new ND4JIllegalStateException("Shape of the new array " + Arrays.toString(shape)
-                        + " doesn't match data length: " + data.length);
-        }
 
         checkShapeValues(data.length, shape);
 
@@ -5230,6 +5250,8 @@ public class Nd4j {
      * @return the instance
      */
     public static INDArray create(int[] shape, int[] stride, long offset, char ordering) {
+        if(shape.length == 0)
+            return Nd4j.trueScalar(0.0);
         shape = getEnsuredShape(shape);
 
         checkShapeValues(shape);
@@ -5249,6 +5271,8 @@ public class Nd4j {
      * @return the instance
      */
     public static INDArray create(long[] shape, long[] stride, long offset, char ordering) {
+        if(shape.length == 0)
+            return Nd4j.trueScalar(0.0);
         shape = getEnsuredShape(shape);
 
         checkShapeValues(shape);
@@ -5322,6 +5346,8 @@ public class Nd4j {
      * @return the instance
      */
     public static INDArray create(int[] shape, int[] stride, char ordering) {
+        if(shape.length == 0)
+            return Nd4j.trueScalar(0.0);
         shape = getEnsuredShape(shape);
 
         checkShapeValues(shape);
@@ -5332,6 +5358,8 @@ public class Nd4j {
     }
 
     public static INDArray create(long[] shape, long[] stride, char ordering) {
+        if(shape.length == 0)
+            return Nd4j.trueScalar(0.0);
         shape = getEnsuredShape(shape);
 
         checkShapeValues(shape);
@@ -5413,7 +5441,9 @@ public class Nd4j {
      * @param shape the shape of the ndarray
      * @return the instance
      */
-    public static INDArray create(int[] shape, char ordering) {
+    public static INDArray create(@NonNull int[] shape, char ordering) {
+        if(shape.length == 0)
+            return Nd4j.trueScalar(0.0);
         //ensure shapes that wind up being scalar end up with the write shape
         if (shape.length == 1 && shape[0] == 0) {
             shape = new int[] {1, 1};
@@ -5428,7 +5458,9 @@ public class Nd4j {
         return ret;
     }
 
-    public static INDArray create(long[] shape, char ordering) {
+    public static INDArray create(@NonNull long[] shape, char ordering) {
+        if(shape.length == 0)
+            return Nd4j.trueScalar(0.0);
         //ensure shapes that wind up being scalar end up with the write shape
 
         checkShapeValues(shape);
@@ -5567,6 +5599,8 @@ public class Nd4j {
      * @return the instance
      */
     public static INDArray createUninitialized(int[] shape) {
+        if(shape.length == 0)
+            return Nd4j.trueScalar(0.0);
         checkShapeValues(shape);
         //ensure shapes that wind up being scalar end up with the write shape
         return createUninitialized(shape, Nd4j.order());
@@ -6476,7 +6510,9 @@ public class Nd4j {
      * @param shape the shape of the ndarray
      * @return an ndarray with ones filled in
      */
-    public static INDArray ones(int... shape) {
+    public static INDArray ones(@NonNull int... shape) {
+        if(shape.length == 0)
+            return Nd4j.trueScalar(1.0);
         checkShapeValues(shape);
 
         INDArray ret = INSTANCE.ones(shape);
@@ -6485,7 +6521,9 @@ public class Nd4j {
     }
 
 
-    public static INDArray ones(long... shape) {
+    public static INDArray ones(@NonNull long... shape) {
+        if(shape.length == 0)
+            return Nd4j.trueScalar(1.0);
         checkShapeValues(shape);
 
         INDArray ret = INSTANCE.ones(shape);

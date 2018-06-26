@@ -137,7 +137,8 @@ fi
 
 case "$OS" in
     linux-armhf)
-    export CMAKE_COMMAND="$CMAKE_COMMAND -D CMAKE_TOOLCHAIN_FILE=$HOME/raspberrypi/pi.cmake"
+    export RPI_BIN=$RPI_HOME/tools/arm-bcm2708/arm-rpi-4.9.3-linux-gnueabihf/bin/arm-linux-gnueabihf
+    export CMAKE_COMMAND="$CMAKE_COMMAND -D CMAKE_TOOLCHAIN_FILE=cmake/rpi.cmake"
     if [ -z "$ARCH" ]; then
         ARCH="armv7-r"
     fi
@@ -147,8 +148,9 @@ case "$OS" in
     if [ -z "$ARCH" ]; then
         ARCH="armv7-a"
     fi
-    export ANDROID_BIN="$ANDROID_NDK/toolchains/arm-linux-androideabi-4.9/prebuilt/$KERNEL/bin/arm-linux-androideabi"
-    export ANDROID_CPP="$ANDROID_NDK/sources/cxx-stl/gnu-libstdc++/4.9/"
+    export ANDROID_BIN="$ANDROID_NDK/toolchains/arm-linux-androideabi-4.9/prebuilt/$KERNEL/"
+    export ANDROID_CPP="$ANDROID_NDK/sources/cxx-stl/llvm-libc++/"
+    export ANDROID_LLVM="$ANDROID_NDK/toolchains/llvm/prebuilt/$KERNEL/"
     export ANDROID_ROOT="$ANDROID_NDK/platforms/android-14/arch-arm/"
     export CMAKE_COMMAND="$CMAKE_COMMAND -DCMAKE_TOOLCHAIN_FILE=cmake/android-arm.cmake"
     ;;
@@ -157,8 +159,9 @@ case "$OS" in
     if [ -z "$ARCH" ]; then
         ARCH="armv8-a"
     fi
-    export ANDROID_BIN="$ANDROID_NDK/toolchains/aarch64-linux-android-4.9/prebuilt/$KERNEL/bin/aarch64-linux-android"
-    export ANDROID_CPP="$ANDROID_NDK/sources/cxx-stl/gnu-libstdc++/4.9/"
+    export ANDROID_BIN="$ANDROID_NDK/toolchains/aarch64-linux-android-4.9/prebuilt/$KERNEL/"
+    export ANDROID_CPP="$ANDROID_NDK/sources/cxx-stl/llvm-libc++/"
+    export ANDROID_LLVM="$ANDROID_NDK/toolchains/llvm/prebuilt/$KERNEL/"
     export ANDROID_ROOT="$ANDROID_NDK/platforms/android-21/arch-arm64/"
     export CMAKE_COMMAND="$CMAKE_COMMAND -DCMAKE_TOOLCHAIN_FILE=cmake/android-arm64.cmake"
     ;;
@@ -167,8 +170,9 @@ case "$OS" in
     if [ -z "$ARCH" ]; then
         ARCH="i686"
     fi
-    export ANDROID_BIN="$ANDROID_NDK/toolchains/x86-4.9/prebuilt/$KERNEL/bin/i686-linux-android"
-    export ANDROID_CPP="$ANDROID_NDK/sources/cxx-stl/gnu-libstdc++/4.9/"
+    export ANDROID_BIN="$ANDROID_NDK/toolchains/x86-4.9/prebuilt/$KERNEL/"
+    export ANDROID_CPP="$ANDROID_NDK/sources/cxx-stl/llvm-libc++/"
+    export ANDROID_LLVM="$ANDROID_NDK/toolchains/llvm/prebuilt/$KERNEL/"
     export ANDROID_ROOT="$ANDROID_NDK/platforms/android-14/arch-x86/"
     export CMAKE_COMMAND="$CMAKE_COMMAND -DCMAKE_TOOLCHAIN_FILE=cmake/android-x86.cmake"
     ;;
@@ -177,8 +181,9 @@ case "$OS" in
     if [ -z "$ARCH" ]; then
         ARCH="x86-64"
     fi
-    export ANDROID_BIN="$ANDROID_NDK/toolchains/x86_64-4.9/prebuilt/$KERNEL/bin/x86_64-linux-android"
-    export ANDROID_CPP="$ANDROID_NDK/sources/cxx-stl/gnu-libstdc++/4.9/"
+    export ANDROID_BIN="$ANDROID_NDK/toolchains/x86_64-4.9/prebuilt/$KERNEL/"
+    export ANDROID_CPP="$ANDROID_NDK/sources/cxx-stl/llvm-libc++/"
+    export ANDROID_LLVM="$ANDROID_NDK/toolchains/llvm/prebuilt/$KERNEL/"
     export ANDROID_ROOT="$ANDROID_NDK/platforms/android-21/arch-x86_64/"
     export CMAKE_COMMAND="$CMAKE_COMMAND -DCMAKE_TOOLCHAIN_FILE=cmake/android-x86_64.cmake"
     ;;
@@ -265,12 +270,18 @@ case "$OS" in
     windows*)
     # Do something under Windows NT platform
     if [ "$CHIP" == "cuda" ]; then
-        export CMAKE_COMMAND="cmake -G \"NMake Makefiles\""
-        export MAKE_COMMAND="nmake"
-        PARALLEL="false"
+        export CMAKE_COMMAND="cmake -G \"Ninja\""
+        export MAKE_COMMAND="ninja"
+        export CC="cl.exe"
+        export CXX="cl.exe"
+        PARALLEL="true"
     else
         export CMAKE_COMMAND="cmake -G \"MSYS Makefiles\""
         export MAKE_COMMAND="make"
+
+        # Sam, do we really need this?
+        export CC=/mingw64/bin/gcc
+        export CXX=/mingw64/bin/g++
         PARALLEL="true"
 
     fi
@@ -288,8 +299,6 @@ case "$OS" in
     fi
     # Make sure we are using 64-bit MinGW-w64
     export PATH=/mingw64/bin/:$PATH
-    CC=/mingw64/bin/gcc
-    CXX=/mingw64/bin/g++
     # export GENERATOR="MSYS Makefiles"
     ;;
 esac
@@ -458,9 +467,9 @@ echo MINIFIER = "${MINIFIER}"
 echo NAME = "${NAME_ARG}"
 mkbuilddir
 pwd
-eval $CMAKE_COMMAND  "$BLAS_ARG" "$ARCH_ARG" "$NAME_ARG" "$SHARED_LIBS_ARG" "$MINIFIER_ARG" "$OPERATIONS_ARG" "$BUILD_TYPE" "$PACKAGING_ARG" "$EXPERIMENTAL_ARG" "$CUDA_COMPUTE" -DDEV=FALSE -DMKL_MULTI_THREADED=TRUE ../..
+eval $CMAKE_COMMAND  "$BLAS_ARG" "$ARCH_ARG" "$NAME_ARG" "$SHARED_LIBS_ARG" "$MINIFIER_ARG" "$OPERATIONS_ARG" "$BUILD_TYPE" "$PACKAGING_ARG" "$EXPERIMENTAL_ARG" "$CUDA_COMPUTE" -DDEV=FALSE -DCMAKE_NEED_RESPONSE=YES -DMKL_MULTI_THREADED=TRUE ../..
 if [ "$PARALLEL" == "true" ]; then
-        eval $MAKE_COMMAND -j$MAKEJ && cd ../../..
+        eval $MAKE_COMMAND -j $MAKEJ && cd ../../..
     else
         eval $MAKE_COMMAND && cd ../../..
 fi

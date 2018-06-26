@@ -1327,7 +1327,7 @@ public class Shape {
         if (rank > 2 || rank < 1)
             return false;
         else {
-            int len = Shape.length(shapeInfo);
+            long len = Shape.length(shapeInfo);
             DataBuffer shape = Shape.shapeOf(shapeInfo);
             return shape.getInt(0) == len || shape.getInt(1) == len;
         }
@@ -2476,13 +2476,14 @@ public class Shape {
      * @param buffer the buffer to get the rank for
      * @return the rank for the shape buffer
      */
-    public static int length(DataBuffer buffer) {
-        int ret = 1;
+    public static long length(DataBuffer buffer) {
+        long ret = 1;
         val rr = buffer.asLong();
         DataBuffer shape = Shape.shapeOf(buffer);
         int rank = Shape.rank(buffer);
         for (int i = 0; i < rank; i++)
             ret *= shape.getLong(i);
+
         return ret;
     }
 
@@ -2741,6 +2742,10 @@ public class Shape {
         return rank * 2 + 4;
     }
 
+    public static int shapeInfoLength(long[] shape) {
+        return shapeInfoLength((int) shape[0]);
+    }
+
     /**
      * Get the stride for the given
      * shape information buffer
@@ -2963,6 +2968,16 @@ public class Shape {
         return 0;
     }
 
+    public static long options(long[] buffer) {
+        int length = shapeInfoLength(rank(buffer));
+        long ret = buffer[length - 3];
+        return ret;
+    }
+
+    public static long extras(long[] buffer) {
+        return options(buffer);
+    }
+
     /**
      * Get the offset for the buffer
      *
@@ -2987,10 +3002,12 @@ public class Shape {
      * @param buffer the shape info buffer to get the offset for
      * @return
      */
+    @Deprecated
     public static int offset(IntBuffer buffer) {
         return 0;
     }
 
+    @Deprecated
     public static long offset(LongBuffer buffer) {
         return 0L;
     }
@@ -3019,6 +3036,18 @@ public class Shape {
     public static int elementWiseStride(IntBuffer buffer) {
         int length2 = shapeInfoLength(buffer.get(0));
         return buffer.get(length2 - 2);
+    }
+
+    /**
+     * Get the element wise stride for the
+     * shape info buffer
+     * @param buffer the buffer to get the element
+     *               wise stride from
+     * @return the element wise stride for the buffer
+     */
+    public static long elementWiseStride(long[] buffer) {
+        int length2 = shapeInfoLength(buffer);
+        return buffer[length2 - 2];
     }
 
 
@@ -3423,10 +3452,15 @@ public class Shape {
         }
     }
 
-    public static void assertBroadcastable(@NonNull long[] x, @NonNull long[] y){
-        if(!areShapesBroadcastable(x, y)){
+    public static void assertBroadcastable(@NonNull long[] x, @NonNull long[] y) {
+        assertBroadcastable(x, y, null);
+    }
+
+    public static void assertBroadcastable(@NonNull long[] x, @NonNull long[] y, Class<?> opClass) {
+        if (!areShapesBroadcastable(x, y)) {
             throw new ND4JIllegalStateException("Arrays are different shape and are not broadcastable." +
-                    " Array 1 shape = " + Arrays.toString(x) + ", array 2 shape = " + Arrays.toString(y));
+                    " Array 1 shape = " + Arrays.toString(x) + ", array 2 shape = " + Arrays.toString(y) +
+                    (opClass == null ? "" : " - op: " + opClass.getName()));
         }
     }
 
@@ -3456,6 +3490,17 @@ public class Shape {
         return true;
     }
 
+    /**
+     *
+     * @param shape
+     * @return
+     */
+    public static long lengthOf(long[] shape) {
+        if (shape.length == 0)
+            return 1L;
+        else
+            return ArrayUtil.prodLong(shape);
+    }
 
     public static boolean hasDefaultStridesForShape(INDArray input){
         if(!strideDescendingCAscendingF(input)){
@@ -3470,4 +3515,7 @@ public class Shape {
         }
         return Arrays.equals(input.stride(), defaultStrides);
     }
+
+
+
 }

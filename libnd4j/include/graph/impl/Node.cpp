@@ -115,7 +115,7 @@ namespace nd4j {
         template <typename T>
         void nd4j::graph::Node<T>::setContextPrototype(ContextPrototype<T> *block) {
             if (_protoContext != nullptr)
-                throw "Block already exists";
+                throw std::runtime_error("Block already exists");
 
             _protoContext = block;
         }
@@ -565,7 +565,7 @@ namespace nd4j {
 
                         if (node->extraParams() != nullptr)
                             for (uint32_t e = 0; e < node->extraParams()->size(); e++)
-                                block->getTArguments()->emplace_back(node->extraParams()->Get(e));
+                                block->getTArguments()->emplace_back(static_cast<T>(node->extraParams()->Get(e)));
 
                         this->setContextPrototype(block);
 
@@ -653,7 +653,7 @@ namespace nd4j {
                 case OpType_BROADCAST:
                     return new nd4j::ops::LegacyBroadcastOp<T>(opNum);
                 default:
-                    throw "Bad opType passed in";
+                    throw std::runtime_error("Bad opType passed in");
             }
         }
 
